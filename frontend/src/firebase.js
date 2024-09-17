@@ -1,44 +1,38 @@
-// Import the functions you need from the Firebase SDKs
+// Import the necessary Firebase functions
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
 
 // Your web app's Firebase configuration
+console.log('API Key:', process.env.REACT_APP_FIREBASE_API_KEY);
+
 const firebaseConfig = {
-    apiKey: "AIzaSyAwemvu41t5Zsu3_Y6yBShFy6KinxRWlO0",
-    authDomain: "myessaybot-97e30.firebaseapp.com",
-    projectId: "myessaybot-97e30",
-    storageBucket: "myessaybot-97e30.appspot.com",
-    messagingSenderId: "1078593539647",
-    appId: "1:1078593539647:web:2191a38c905432364fb28a"
-  };
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.REACT_APP_FIREBASE_APP_ID
+};
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-// Set up Google provider
+// Initialize Google and Discord providers
 const googleProvider = new GoogleAuthProvider();
+// Add Discord provider if needed (assuming Firebase OAuth is set up for Discord)
+const discordProvider = new GoogleAuthProvider(); // Use appropriate provider for Discord, adjust as necessary
 
 // Function to handle Google Sign-In
 const signInWithGoogle = async () => {
   try {
     const result = await signInWithPopup(auth, googleProvider);
-    return result.user; // User signed in successfully
-  } catch (error) {
-    console.error(error);
-    throw error; // Handle error as needed
-  }
-};
-
-// Function to handle sign out
-const handleSignOut = async () => {
-  try {
-    await signOut(auth);
-    console.log("User signed out");
+    return result.user;
   } catch (error) {
     console.error(error);
     throw error;
   }
 };
 
-export { auth, signInWithGoogle, handleSignOut };
+// Export auth, signInWithGoogle, signOut, and the providers
+export { auth, signInWithGoogle, signOut, googleProvider, discordProvider };

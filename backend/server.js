@@ -1,4 +1,3 @@
-// Import the necessary modules and libraries
 import express from "express";
 import dotenv from "dotenv";
 import cors from 'cors';
@@ -13,7 +12,9 @@ const app = express();
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-// Initialize OpenAI client with the API key from the environment variables
+// Correctly set the Cohere API key
+
+// Initialize OpenAI client
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -25,64 +26,61 @@ app.use(cors());          // To enable CORS
 // Connect to the database
 connectDB();
 
-// Home page route
-app.get('/', (req, res) => {
-  res.send('Welcome to the home page!');
-});
+// Function to call OpenAI's API
+const generateWithOpenAI = async (prompt, numParagraphs, wordCount) => {
+  const tokenEstimate = Math.min(Math.floor(wordCount * 1.33), 4000);
+  const openAIResponse = await openai.chat.completions.create({
+    model: "gpt-4",  // Adjust as necessary
+    messages: [
+      { role: 'system', content: 'You are a helpful assistant that writes detailed and comprehensive essays.' },
+      { role: 'user', content: `Write an exactly, no more, no less, ${numParagraphs}-paragraph essay on '${prompt}' with at least ${wordCount} words.` }
+    ],
+    max_tokens: tokenEstimate,
+    temperature: 0.7,
+  });
 
-// Essay Generation Route using OpenAI
-app.post('/generate-essay', async (req, res) => {
-  const { prompt, numParagraphs, wordCount } = req.body;
+  if (openAIResponse.choices && openAIResponse.choices.length > 0) {
+    return openAIResponse.choices[0].message.content.trim();
+  } else {
+    throw new Error("No response from OpenAI");
+  }
+};
+
+
+app.post('/save-essay', async (req, res) => {
+  const { content, user } = req.body;
+
+  // Basic validation
+  if (!content || !user) {
+    return res.status(400).json({ message: 'Content and user are required' });
+  }
 
   try {
-    // Validate that the prompt is provided
-    if (!prompt) {
-      return res.status(400).json({ message: "Prompt is required" });
-    }
-
-    // Estimate tokens based on the word count (rough approximation)
-    const tokenEstimate = Math.min(Math.floor(wordCount * 1.33), 4000);
-
-    // Call OpenAI's Chat Completions API with the provided parameters
-    const openAIResponse = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",  // Adjust the model as necessary (e.g., gpt-4 for more advanced models)
-      messages: [
-        { role: 'system', content: 'You are a helpful assistant that writes detailed and comprehensive essays.' },
-        { role: 'user', content: `Write a detailed ${numParagraphs}-paragraph essay on '${prompt}' with at least ${wordCount} words.` }
-      ],
-      max_tokens: tokenEstimate,  // Limit the response based on token estimate
-      temperature: 0.7,  // Control creativity level
-    });
-
-    // Extract the essay content from the response
-    if (openAIResponse.choices && openAIResponse.choices.length > 0) {
-      const essay = openAIResponse.choices[0].message.content.trim();
-      res.json({ result: essay });
-    } else {
-      throw new Error("No response from OpenAI");
-    }
+    const newEssay = new Essay({ content, user });
+    await newEssay.save();
+    res.status(201).json({ message: 'Essay saved successfully' });
   } catch (error) {
-    console.error("Error:", error.message);
-    res.status(500).json({ message: 'Error generating essay', error: error.message });
+    console.error('Error saving essay:', error.message);
+    res.status(500).json({ message: 'Failed to save essay', error: error.message });
   }
 });
 
 
+// Stripe checkout session creation route
 app.post('/create-checkout-session', async (req, res) => {
   try {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
         {
-          price: 'price_1PxZ0zBHuck2IHyain2XeshW', // Replace with your actual Stripe price ID
+          price: 'price_1PxZ0zBHuck2IHyain2XeshW',  // Replace with your actual Stripe price ID
           quantity: 1,
         },
       ],
-      mode: 'subscription',
-      success_url: 'http://localhost:3000/success',
-      cancel_url: 'http://localhost:3000/cancel',
+      mode: 'subscription',  // If it's a subscription, use 'subscription', otherwise 'payment'
+      success_url: 'http://localhost:3000/success',  // Replace with your actual success URL
+      cancel_url: 'http://localhost:3000/cancel',    // Replace with your actual cancel URL
     });
-    
     res.json({ id: session.id });
   } catch (error) {
     console.error('Error creating checkout session:', error);
@@ -92,35 +90,83 @@ app.post('/create-checkout-session', async (req, res) => {
 
 
 
-// Route to get all essays
+// Fetch all essays route
 app.get('/all-essays', async (req, res) => {
   try {
-    const essays = await Essay.find(); // Fetch all essays from the database
+    const essays = await Essay.find();  // Fetch all essays from the database
     res.json({ essays });
   } catch (error) {
-    console.error('Error fetching essays:', error);
+    console.error('Error fetching essays:', error.message);
     res.status(500).json({ message: 'Failed to fetch essays' });
   }
 });
 
-// Route to save an essay
-app.post('/save-essay', async (req, res) => {
-  const { content, user } = req.body;
+// Function to call Cohere's API using the chat method
+const generateWithCohere = async (prompt, numParagraphs, wordCount) => {
+  const response = await cohere.generate({
+    model: 'command-xlarge-nightly',
+    prompt: `Write a ${numParagraphs}-paragraph essay with at least ${wordCount} words on the topic: ${prompt}`,
+    max_tokens: Math.min(Math.floor(wordCount * 1.33), 3000),
+    temperature: 0.7,
+  });
 
+  if (response.body.generations && response.body.generations.length > 0) {
+    return response.body.generations[0].text.trim();
+  } else {
+    throw new Error("No response from Cohere");
+  }
+};
+
+
+const handleSubscribe = async () => {
+  setIsLoading(true);
+  const stripe = await stripePromise;
+  
   try {
-    // Validate content and user
-    if (!content || !user) {
-      return res.status(400).json({ message: 'Content and user are required' });
+    // Fetch the session ID from the backend
+    const response = await fetch('http://localhost:5000/create-checkout-session', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const session = await response.json();
+
+    // Ensure the session ID is returned from the backend
+    if (session.id) {
+      const result = await stripe.redirectToCheckout({ sessionId: session.id });
+
+      if (result.error) {
+        console.error(result.error.message);
+      }
+    } else {
+      console.error("No session ID returned from backend.");
     }
 
-    // Create and save a new essay
-    const newEssay = new Essay({ content, user });
-    await newEssay.save();
-
-    res.status(201).json({ message: 'Essay saved successfully' });
   } catch (error) {
-    console.error('Error saving essay:', error);
-    res.status(500).json({ message: 'Failed to save essay' });
+    console.error("Error creating checkout session:", error);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+
+// Essay Generation Route with model toggle between OpenAI and Cohere
+app.post('/generate-essay', async (req, res) => {
+  const { prompt, numParagraphs, wordCount } = req.body;
+
+  // Basic validation
+  if (!prompt || !numParagraphs || !wordCount) {
+    return res.status(400).json({ message: "Prompt, numParagraphs, and wordCount are required" });
+  }
+
+  try {
+    let essay = await generateWithOpenAI(prompt, numParagraphs, wordCount);  // Or any other logic
+
+    res.json({ result: essay });
+  } catch (error) {
+    res.status(500).json({ message: 'Error generating essay', error: error.message });
   }
 });
 
@@ -129,6 +175,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server started on port ${PORT}`);
 });
+
 
 // // OPENAI & STEALTHGPT
 // // Import the necessary modules and libraries

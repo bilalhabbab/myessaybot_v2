@@ -1,38 +1,192 @@
-.App {
-  text-align: center;
-}
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
+/* General styles */
+body {
   background-color: #282c34;
-  min-height: 100vh;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.App {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
+  height: 100vh;
+  padding: 0 50px;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+}
+
+.text-content h1 {
+  font-size: 3rem;
+  margin-bottom: 0;
   color: white;
 }
 
-.App-link {
-  color: #61dafb;
+.text-content h2 {
+  font-size: 1.5rem;
+  margin-top: 10px;
+  color: white;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
+.buttons-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.buttons-container button {
+  background-color: #61dafb;
+  border: 2px solid white;
+  padding: 10px 20px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+  color: #333;
+  transition: background-color 0.3s ease, border 0.3s ease;
+}
+
+.buttons-container button:hover {
+  background-color: #4ec1e0; /* Darker sky blue */
+}
+
+.buttons-container button:disabled {
+  background-color: #bbb;
+  cursor: not-allowed;
+}
+
+.logo {
+  width: 150px;
+  height: 150px;
+  border-radius: 8px;
+  margin-right: 20px;
+}
+
+@media (max-width: 768px) {
+  .App {
+    flex-direction: column;
+    text-align: center;
+    padding: 0;
   }
-  to {
-    transform: rotate(360deg);
+
+  .buttons-container {
+    width: 100%;
+    margin-top: 20px;
+    align-items: center;
   }
+
+  .buttons-container button {
+    width: 80%;
+  }
+
+  .header-content {
+    flex-direction: column;
+    align-items: center;
+  }
+}
+
+/* Generator Container Styles */
+.generator-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 50px;
+}
+
+.generator-container form {
+  display: flex;
+  flex-direction: column;
+}
+
+.generator-container label {
+  margin-top: 10px;
+}
+
+.generator-container input {
+  margin-top: 5px;
+  padding: 8px;
+  width: 300px;
+}
+
+.generator-container button {
+  margin-top: 20px;
+  padding: 10px 20px;
+  background-color: #61dafb;
+  border: none;
+  cursor: pointer;
+}
+
+.generator-container button:hover {
+  background-color: #21a1f1;
+}
+
+/* Essay Output Styles */
+.essay-output {
+  margin-top: 30px;
+  background-color: #f9f9f9;
+  padding: 20px;
+  border-radius: 8px;
+  width: 60%;
+  text-align: left;
+}
+
+.essay-output h3 {
+  margin-bottom: 10px;
+}
+
+.essay-output p {
+  white-space: pre-line;
+  line-height: 1.6;
+}
+
+
+/* General button styling */
+button {
+  padding: 10px 20px;
+  margin: 10px;
+  font-size: 16px;
+  color: white;
+  background-color: #61dafb; /* Sky blue base color */
+  border: none;
+  border-radius: 20px; /* Rounded corners */
+  cursor: pointer;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2); /* Light shadow */
+  transition: all 0.3s ease; /* Smooth transitions */
+}
+
+/* Hover effect for buttons */
+button:hover {
+  background-color: #21a1f1; /* Darker blue on hover */
+  box-shadow: 3px 3px 7px rgba(0, 0, 0, 0.3); /* More pronounced shadow on hover */
+  transform: translateY(-3px); /* Slight lift on hover */
+}
+
+/* Active state effect */
+button:active {
+  background-color: #1b8ac6; /* Even darker blue when clicked */
+  transform: translateY(0); /* Return to normal */
+}
+
+/* Styling for specific buttons, if you want different colors */
+button.sign-out {
+  background-color: #ff6961; /* Light red */
+}
+
+button.subscribe {
+  background-color: #77dd77; /* Light green */
+}
+
+button.continue-generator {
+  background-color: #61dafb; /* Sky blue, already applied */
+}
+
+/* Make text on buttons bolder for better readability */
+button {
+  font-weight: bold;
 }
