@@ -8,7 +8,7 @@ import Essay from './models/Essay.js';
 import Stripe from 'stripe';
 
 // Load environment variables
-dotenv.config({ path: '../.env' });
+dotenv.config({ path: './.env' });
 const app = express();
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
